@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# List of servers to SSH into
+servers=("server1" "server2" "server3")
+
+# Email settings
+to="youremail@example.com"
+from="senderemail@example.com"
+subject="Disk Usage Report"
+
+# Generate HTML table header
+html="<table><tr><th>Server</th><th>Filesystem</th><th>Size</th><th>Used</th><th>Avail</th><th>Use%</th><th>Mounted on</th></tr>"
+
+# Loop through the servers
+for server in "${servers[@]}"
+do
+    # Run the df -h command on the server
+    result=$(ssh $server 'df -h')
+
+    # Generate HTML table rows
+    rows=$(echo "$result" | awk 'NR>1 {print "<tr>"; for(i=1;i<=NF;i++)print "<td>" $i "</td>";print "</tr>"}')
+
+    # Add the rows to the HTML table
+    html="$html$rows"
+done
+
+# Generate the HTML email body
+html="$html</table>"
+body="<html><body><p>Server disk usage:</p>$html</body></html>"
+
+# Send the email
+echo "$body" | mail -a "Content-Type: text/html" -s "$subject" -r "$from" "$to"
